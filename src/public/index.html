@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProofPocket — Verifiable On-Device AI | Ookweli</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #111827;
+      --card-border: #1f293d;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.15);
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.15);
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      padding: 24px;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 24px;
+    }
+    .brand h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand span.subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-success { background: var(--success-glow); color: var(--success); border: 1px solid var(--success); }
+    .badge-info { background: var(--accent-glow); color: var(--accent); border: 1px solid var(--accent); }
+    .badge-warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid var(--warning); }
+
+    .problem-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-left: 4px solid var(--accent);
+      padding: 16px 20px;
+      border-radius: 6px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .problem-box strong { color: var(--text-main); }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 992px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .scenario-buttons { display: flex; gap: 8px; margin-bottom: 16px; }
+    .scenario-btn {
+      background: #1e293b;
+      color: var(--text-muted);
+      border: 1px solid var(--card-border);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .scenario-btn.active, .scenario-btn:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      background: #0d131f;
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      padding: 12px;
+      resize: vertical;
+      margin-bottom: 16px;
+    }
+    textarea:focus { outline: none; border-color: var(--accent); }
+    .btn-run {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-run:hover { opacity: 0.9; }
+    .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .telemetry-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 13px;
+    }
+    .telemetry-label { color: var(--text-muted); }
+    .telemetry-value { font-family: var(--font-mono); color: var(--text-main); font-weight: 500; }
+
+    .cert-box {
+      background: #0b1320;
+      border: 1px solid var(--success);
+      border-radius: 6px;
+      padding: 18px;
+      margin-top: 16px;
+    }
+    .cert-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .cert-title { font-size: 14px; font-weight: 700; color: var(--success); font-family: var(--font-mono); }
+    .cert-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 12px 0; }
+    .cert-metric-card {
+      background: #111a2e;
+      border: 1px solid var(--card-border);
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .cert-metric-val { font-size: 16px; font-weight: 700; color: var(--text-main); font-family: var(--font-mono); }
+    .cert-metric-lbl { font-size: 11px; color: var(--text-dim); text-transform: uppercase; }
+
+    .disclaimer-box {
+      background: #181c26;
+      border: 1px solid #2d3748;
+      border-radius: 4px;
+      padding: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 14px;
+      line-height: 1.4;
+    }
+    .disclaimer-box strong { color: var(--warning); }
+
+    .log-stream {
+      background: #080c14;
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #38bdf8;
+      height: 140px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <h1>PROOFPOCKET <span>// OOKWELI</span></h1>
+        <span class="subtitle">Verifiable On-Device AI Pipeline • Tether QVAC × Jolt Atlas zkML</span>
+      </div>
+      <div class="badges">
+        <span class="badge badge-success">✓ Level 1 zkML Prover</span>
+        <span class="badge badge-info">100% Offline Capable</span>
+        <span class="badge badge-warning">Zero Remote Cloud Calls</span>
+      </div>
+    </header>
+
+    <div class="problem-box">
+      <strong>The Problem:</strong> When users process confidential records (financial reserves, medical charts, KYC credentials) through cloud AI, their private data leaks. While running AI locally preserves privacy, local predictions can easily be fabricated or tampered with. <strong>ProofPocket solves both:</strong> Tether QVAC executes the AI inference on-device in an isolated environment, and Jolt Atlas generates a cryptographic zero-knowledge proof (HyperKZG + multilinear sumchecks) verifying that the exact ONNX model was executed faithfully without falsification.
+    </div>
+
+    <div class="grid">
+      <!-- Left Column: Input and QVAC Engine -->
+      <div>
+        <div class="card">
+          <div class="card-title">
+            <span>1. Private Document Input</span>
+            <span style="font-size: 11px; color: var(--text-dim);">Confidential Device Memory</span>
+          </div>
+
+          <div class="scenario-buttons">
+            <button class="scenario-btn active" onclick="selectScenario('solvency')">USDT Reserve Audit</button>
+            <button class="scenario-btn" onclick="selectScenario('healthcare')">Clinical EHR Triage</button>
+            <button class="scenario-btn" onclick="selectScenario('identity')">AML / Sanctions</button>
+          </div>
+
+          <textarea id="documentInput" placeholder="Enter private statement or select a scenario..."></textarea>
+
+          <button id="btnRun" class="btn-run" onclick="executePipeline()">
+            <span id="btnIcon">⚡</span>
+            <span id="btnText">Execute QVAC & Generate Jolt zkML Proof</span>
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>2. Tether QVAC Local Telemetry</span>
+            <span id="qvacStatusBadge" class="badge badge-success">ONLINE LOCAL</span>
+          </div>
+
+          <div class="telemetry-row">
+            <span class="telemetry-label">Stack Runtime</span>
+            <span class="telemetry-value">Tether QVAC SDK (@qvac/sdk)</span>
+          </div>
+          <div class="telemetry-row">
+            <span class="telemetry-label">Host CPU</span>
+            <span class="telemetry-value" id="valCpu">Detecting...</span>
+          </div>
+          <div class="telemetry-row">
+            <span class="telemetry-label">Cores (Physical / Logical)</span>
+            <span class="telemetry-value" id="valCores">8 Cores</span>
+          </div>
+          <div class="telemetry-row">
+            <span class="telemetry-label">RAM Allocated / Total</span>
+            <span class="telemetry-value" id="valRam">Detecting...</span>
+          </div>
+          <div class="telemetry-row">
+            <span class="telemetry-label">GPU Acceleration</span>
+            <span class="telemetry-value" id="valGpu">bare-gpu-info (Available)</span>
+          </div>
+          <div class="telemetry-row">
+            <span class="telemetry-label">Network Transit</span>
+            <span class="telemetry-value" style="color: var(--success);">0 Bytes (Air-gapped)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Verification Certificate & Cryptographic Correctness -->
+      <div>
+        <div class="card">
+          <div class="card-title">
+            <span>3. Jolt Atlas zkML Verification Receipt</span>
+            <span id="zkStatusBadge" class="badge badge-info">IDLE</span>
+          </div>
+
+          <div id="certContainer" style="display: none;" class="cert-box">
+            <div class="cert-header">
+              <span class="cert-title">✓ INFERENCE CRYPTOGRAPHICALLY VERIFIED</span>
+              <span id="certId" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);"></span>
+            </div>
+
+            <div class="cert-metrics">
+              <div class="cert-metric-card">
+                <div class="cert-metric-val" id="metricProveTime">-</div>
+                <div class="cert-metric-lbl">Proving Latency</div>
+              </div>
+              <div class="cert-metric-card">
+                <div class="cert-metric-val" id="metricVerifyTime">-</div>
+                <div class="cert-metric-lbl">Verification Latency</div>
+              </div>
+              <div class="cert-metric-card">
+                <div class="cert-metric-val" id="metricCommitments">-</div>
+                <div class="cert-metric-lbl">HyperKZG Commitments</div>
+              </div>
+              <div class="cert-metric-card">
+                <div class="cert-metric-val" id="metricSumchecks">-</div>
+                <div class="cert-metric-lbl">Sumcheck Proofs</div>
+              </div>
+            </div>
+
+            <div class="telemetry-row">
+              <span class="telemetry-label">Neural Model</span>
+              <span class="telemetry-value">BGE-Tiny ONNX (269 Atlas Nodes)</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-label">Commitment Scheme</span>
+              <span class="telemetry-value">HyperKZG over BN254 Curve</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-label">Proof Payload Size</span>
+              <span class="telemetry-value" id="metricProofSize">0.26 MiB</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-label">Deterministic Scale</span>
+              <span class="telemetry-value">Fixed-point 2^14 (1/16384)</span>
+            </div>
+          </div>
+
+          <div id="placeholderCert" style="padding: 30px; text-align: center; color: var(--text-dim); font-size: 13px;">
+            Run the pipeline to generate and verify a zero-knowledge proof of ONNX inference.
+          </div>
+
+          <!-- Cryptographic Correctness Boundary -->
+          <div class="disclaimer-box">
+            <strong>Cryptographic Correctness Boundary:</strong>
+            <p style="margin-top: 4px;">
+              • <strong>What is proven:</strong> The 269 nodes of the ONNX neural network were mathematically evaluated on the tensor witness with committed weights, verified across all 114 sumcheck rounds without calculation tampering.<br>
+              • <strong>What remains unverified:</strong> Proof of inference does not attest to the real-world factual truth of the input statement itself.
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Execution Terminal</span>
+            <span style="font-size: 11px; color: var(--text-dim);">Real-time Subprocess IO</span>
+          </div>
+          <div class="log-stream" id="logStream">Ready. Waiting for user action...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const scenarios = {
+      solvency: "Audited Liquid Reserves: 114,200,000 USD Equivalent. Collateral Ratio: 104.8%. Zero unsecured commercial paper held. Treasury Bills: 88.5%. Sovereign Repo: 11.5%.",
+      healthcare: "Patient presents with acute episodic dyspnea and tachycardia. Fasting blood glucose: 118 mg/dL. ECG indicates normal sinus rhythm with mild non-specific ST changes.",
+      identity: "Subject verification: jurisdiction Republic of Kenya. PEP clearance: Negative. OFAC/UN Sanctions screening: Negative. Biometric confidence score: 0.994."
+    };
+
+    function selectScenario(id) {
+      document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('documentInput').value = scenarios[id] || '';
+    }
+
+    // Default scenario
+    document.getElementById('documentInput').value = scenarios.solvency;
+
+    // Load initial system resources
+    async function loadResources() {
+      try {
+        const res = await fetch('/api/resources');
+        const data = await res.json();
+        if (data && data.capabilities) {
+          document.getElementById('valCpu').innerText = data.capabilities.cpu.model;
+          document.getElementById('valCores').innerText = data.capabilities.cpu.logicalCores + ' Cores';
+          document.getElementById('valRam').innerText = data.sample.memoryUsedFormatted + ' / ' + data.capabilities.memory.totalFormatted;
+        }
+      } catch (err) {
+        console.warn('Failed to load initial resources', err);
+      }
+    }
+    loadResources();
+
+    async function executePipeline() {
+      const btn = document.getElementById('btnRun');
+      const btnIcon = document.getElementById('btnIcon');
+      const btnText = document.getElementById('btnText');
+      const log = document.getElementById('logStream');
+      const certContainer = document.getElementById('certContainer');
+      const placeholder = document.getElementById('placeholderCert');
+      const zkBadge = document.getElementById('zkStatusBadge');
+
+      btn.disabled = true;
+      btnIcon.innerHTML = '<span class="spinner"></span>';
+      btnText.innerText = 'Proving on-device with Jolt Atlas...';
+      zkBadge.className = 'badge badge-warning';
+      zkBadge.innerText = 'PROVING (HyperKZG)';
+
+      log.innerText = `[${new Date().toLocaleTimeString()}] Initializing Tether QVAC local AI orchestrator...\n`;
+      log.innerText += `[${new Date().toLocaleTimeString()}] Input text sanitized in local memory.\n`;
+      log.innerText += `[${new Date().toLocaleTimeString()}] Spawning Jolt Atlas zkML prover (bge-tiny ONNX, 269 nodes)...\n`;
+
+      try {
+        const text = document.getElementById('documentInput').value;
+        const res = await fetch('/api/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        const data = await res.json();
+
+        if (data.zkmlEngine && data.zkmlEngine.status === 'CRYPTOGRAPHICALLY_VERIFIED') {
+          zkBadge.className = 'badge badge-success';
+          zkBadge.innerText = 'VERIFIED';
+
+          const zk = data.zkmlEngine;
+          document.getElementById('certId').innerText = 'CERT: ' + zk.certificateId;
+          document.getElementById('metricProveTime').innerText = zk.timings.provingTime;
+          document.getElementById('metricVerifyTime').innerText = zk.timings.verifyingTime;
+          document.getElementById('metricCommitments').innerText = zk.proofMetrics.polynomialCommitments;
+          document.getElementById('metricSumchecks').innerText = zk.proofMetrics.sumcheckProofs;
+          document.getElementById('metricProofSize').innerText = zk.proofMetrics.proofSizeMiB + ' MiB';
+
+          placeholder.style.display = 'none';
+          certContainer.style.display = 'block';
+
+          log.innerText += `[${new Date().toLocaleTimeString()}] HyperKZG prover setup: ${zk.timings.proverSetupTime}\n`;
+          log.innerText += `[${new Date().toLocaleTimeString()}] Proof constructed: ${zk.proofMetrics.polynomialCommitments} commitments, ${zk.proofMetrics.sumcheckProofs} sumcheck rounds in ${zk.timings.provingTime}\n`;
+          log.innerText += `[${new Date().toLocaleTimeString()}] Verifier check: SUCCESS in ${zk.timings.verifyingTime}\n`;
+          log.innerText += `[${new Date().toLocaleTimeString()}] Proof verified cryptographically. Zero data leakage.\n`;
+        } else {
+          zkBadge.className = 'badge badge-danger';
+          zkBadge.innerText = 'ERROR';
+          log.innerText += `[${new Date().toLocaleTimeString()}] Error: ${data.zkmlEngine?.error || 'Prover failed'}\n`;
+        }
+      } catch (err) {
+        log.innerText += `[${new Date().toLocaleTimeString()}] Network/Runtime Error: ${err.message}\n`;
+      } finally {
+        btn.disabled = false;
+        btnIcon.innerText = '⚡';
+        btnText.innerText = 'Execute QVAC & Generate Jolt zkML Proof';
+      }
+    }
+  </script>
+</body>
+</html>

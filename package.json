@@ -1,0 +1,28 @@
+{
+  "name": "ookweli",
+  "version": "1.0.0",
+  "description": "ProofPocket / Ookweli - Verifiable On-Device AI with Tether QVAC and Jolt Atlas zkML",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "cli": "node bin/proofpocket.js",
+    "test": "node tests/test_all.js"
+  },
+  "dependencies": {
+    "@qvac/sdk": "^0.22.0"
+  },
+  "keywords": [
+    "ai",
+    "qvac",
+    "tether",
+    "jolt-atlas",
+    "zkml",
+    "proofpocket",
+    "zero-knowledge",
+    "verifiable-ai",
+    "local-ai"
+  ],
+  "author": "Ookweli Team",
+  "license": "Apache-2.0"
+}

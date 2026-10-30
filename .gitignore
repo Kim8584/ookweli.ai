@@ -1,65 +1,7 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
-venv/
-.venv/
-env/
-.env
-ENV/
-env.bak/
-venv.bak/
-
-# Environment Variables & Secrets
-.env
-.env.local
-.env.*.local
-*.key
-*.pem
-
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-*-checkpoint.ipynb
-
-# Datasets and AI Model Artifacts
-data/
-models/
-checkpoints/
-*.pt
-*.pth
-*.onnx
-*.bin
-*.h5
-*.safetensors
-*.pkl
-
-# IDE / Editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
-
-# Logs & profiling
-wandb/
-runs/
+node_modules/
+.npm/
 *.log
+.DS_Store
+.env
+.env.*
+!models/bge-tiny/
