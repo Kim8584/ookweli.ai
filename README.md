@@ -1,132 +1,140 @@
-# ProofPocket (Ookweli)
-### Verifiable On-Device AI Pipeline | Tether QVAC × Jolt Atlas zkML
+# Ookweli (`proofpocket`)
 
-> **Submission for AI Yako Hackathon (Nairobi)**  
-> **Status: LEVEL 1 — IDEAL TIER ACHIEVED (Full On-Device Execution & Cryptographic Verification)**
+**An experimental local-first AI & zkML workbench exploring verifiable on-device inference.**
 
----
+Ookweli pairs **Tether's QVAC** local runtime (`@qvac/sdk`) with **Jolt Atlas** zero-knowledge proofs (`HyperKZG` + multilinear sumchecks over `BN254`). It started as a weekend research sandbox to test whether an ordinary developer laptop can run private local inference *and* cryptographically prove that a 269-node ONNX transformer actually executed without weight tampering—all completely offline.
 
-## 1. Executive Summary
-
-When users process sensitive data (such as corporate balance sheets, proof-of-reserves, confidential medical triage notes, or KYC identity credentials) with Artificial Intelligence, they face a fundamental trade-off:
-1. **Cloud AI compromises privacy:** Confidential records are leaked to third-party data centers and inference APIs.
-2. **Local AI lacks verifiability:** Anyone running an AI model on a local laptop or phone can tamper with the weights, modify the output, or simply falsify an inference result.
-
-**ProofPocket** solves both problems simultaneously:
-- **Tether QVAC Local AI:** Inferences and telemetry run 100% on-device in an isolated environment with **zero remote cloud exposure**.
-- **Jolt Atlas zkML Prover:** Uses a lookup-centric zero-knowledge proving system (a16z Jolt + ICME Labs) over the BN254 curve, producing a succinct cryptographic proof (**HyperKZG commitments + multilinear sumchecks**) that proves the exact ONNX neural network was executed faithfully without computation tampering.
+> **Status:** Working research prototype & developer tool (CLI + local web UI + automated test suite).
 
 ---
 
-## 2. Architecture & Pipeline
+## Why This Exists
+
+Running AI locally solves data privacy, but introduces a different problem: **verifiability**. If a device claims *"my local model audited this ledger / triaged this note / cleared this check,"* a third party has no way to know whether the model actually ran or if the output was hardcoded.
+
+Ookweli is a small, self-contained experiment in combining two layers:
+1. **Local Execution (`@qvac/sdk`):** Isolates document inspection, hardware telemetry, and policy tagging in local memory via QVAC's Bare worker runtime—zero cloud calls, zero outbound bytes.
+2. **Cryptographic Proof of Inference (`jolt-atlas`):** Lowers a compact ONNX model (`bge-tiny`, 269 Atlas nodes) into fixed-point arithmetic ($2^{14}$ scale) and generates a succinct **0.26 MiB** zero-knowledge proof of execution in ~6 seconds, verifiable in ~640 milliseconds.
+
+---
+
+## Architecture
 
 ```mermaid
 flowchart TD
-    UserDoc["Private Input / Document (RAM Only)"] --> QVAC["Tether QVAC Engine (@qvac/sdk)"]
-    QVAC --> LocalAnalysis["1. Local Telemetry & Policy Classification"]
+    UserDoc["Private Input (Device RAM Only)"] --> QVAC["Local Runtime (@qvac/sdk)"]
+    QVAC --> LocalAnalysis["1. Hardware Telemetry & Policy Tagging"]
     LocalAnalysis --> TensorBinding["2. Fixed-Point Tensor Synthesis (Scale 2^14)"]
     TensorBinding --> JoltProver["3. Jolt Atlas Prover (HyperKZG / BN254)"]
-    JoltProver --> Proof["Succinct zkML Proof (0.26 MiB, 912 Commitments, 114 Sumchecks)"]
-    Proof --> Verifier["4. Cryptographic Verifier (Sub-second Verification)"]
-    Verifier --> Cert["Verifiable ProofPocket Attestation Certificate"]
+    JoltProver --> Proof["Succinct Proof (0.26 MiB | 912 Commitments | 114 Sumchecks)"]
+    Proof --> Verifier["4. Cryptographic Verifier (~640ms)"]
+    Verifier --> Cert["Verifiable Attestation Receipt"]
 ```
 
-### Integration Details
-- **Local AI Framework:** Tether QVAC SDK (`@qvac/sdk` v0.22.0) utilizing in-process Bare runtime and hardware diagnostics (`bare-gpu-info`, CPU topology, memory budget).
-- **Prover Backend:** Jolt Atlas zkML (`ICME-Lab/jolt-atlas`) with HyperKZG polynomial commitment scheme and multilinear sumchecks.
-- **Neural Network:** BGE-Tiny ONNX (269 Atlas nodes, fixed-point scale $2^{14}$, 16-token sequence binding).
-- **Proving Latency:** ~6.0 seconds.
-- **Verification Latency:** ~640 milliseconds.
-- **Proof Size:** 0.26 MiB (912 commitments, 114 sumcheck proofs).
+### Observed Benchmarks (Local x86_64 Linux, 12 GB RAM)
+- **Model:** `bge-tiny` ONNX (269 Atlas nodes, sequence length `16`, fixed-point scale `2^14`)
+- **Polynomial Commitment Scheme:** HyperKZG over BN254 (`Blake2b` transcript)
+- **Prover Setup:** ~0.9s – 1.5s
+- **Proof Generation:** ~6.0s – 6.5s
+- **Proof Size:** `0.26 MiB` (`912` commitments, `114` sumcheck proofs)
+- **Verification Time:** ~640ms
 
 ---
 
-## 3. Cryptographic Correctness Boundary
+## Cryptographic Scope & Honest Boundaries
 
-To preserve absolute academic and cryptographic integrity, ProofPocket strictly defines its verification guarantees:
+A common pitfall in zkML demos is overclaiming what a proof guarantees. This project explicitly separates computation integrity from ground-truth claims:
 
-| Dimension | Cryptographic Status | Explanation |
+| Property | Status | What It Actually Means |
 | :--- | :---: | :--- |
-| **Computation Execution** | **PROVEN** | Mathematically proves all 269 ONNX graph nodes were executed on the committed tensor witness without tampering. |
-| **Weight Integrity** | **PROVEN** | Model parameters were committed prior to witness evaluation and checked by sumcheck rounds. |
-| **Input Privacy** | **PRESERVED** | The sensitive document never leaves device RAM; proof can be shared without exposing inputs. |
-| **Real-World Factual Truth** | *Unverified* | A zero-knowledge proof verifies computation fidelity, not whether an external input statement is factually true. |
+| **Graph Execution** | **Proven** | All 269 ONNX nodes were evaluated deterministically on the committed witness tensor. |
+| **Weight Commitment** | **Proven** | Model parameters were committed before witness evaluation and checked across 114 sumcheck rounds. |
+| **Input Confidentiality** | **Preserved** | Raw text stays in local RAM; only the proof receipt and certificate metadata need to leave the device. |
+| **Real-World Truth** | *Unverified* | Proving that a model ran faithfully does **not** prove that the input text is factually true in the real world. |
 
 ---
 
-## 4. Repository Structure
+## Project Layout
 
 ```
 ookweli/
 ├── bin/
-│   ├── jolt-atlas-prover     # Release binary: Jolt Atlas HyperKZG zkML prover
-│   └── proofpocket.js        # Executable developer CLI tool
+│   ├── proofpocket.js        # CLI runner (--scenario, --input, --prove-only, --json)
+│   └── jolt-atlas-prover     # Compiled release prover binary (built via scripts/build_prover.sh)
 ├── models/
-│   └── bge-tiny/             # 269-node ONNX neural network and config
+│   └── bge-tiny/             # Checked-in 269-node ONNX model & metadata
 │       ├── network.onnx
 │       ├── config.json
 │       └── GENERATED.json
+├── scripts/
+│   └── build_prover.sh       # Reproducible Rust release build for jolt-atlas-prover
 ├── src/
-│   ├── public/
-│   │   └── index.html        # Clean, developer-grade UI (100% offline, zero CDN)
-│   ├── proofpocket.js        # Core pipeline orchestrator
-│   ├── qvac_telemetry.js     # Tether QVAC on-device AI integration
-│   ├── zkml_prover.js        # Jolt Atlas prover/verifier bridge
-│   └── server.js             # Native HTTP server & REST API
-├── tests/
-│   └── test_all.js           # Automated test suite (21/21 passing tests)
-└── package.json              # Project metadata & dependencies
+│   ├── public/index.html     # Zero-dependency developer dashboard (no external CDNs)
+│   ├── proofpocket.js        # Pipeline orchestrator & preset scenarios
+│   ├── qvac_telemetry.js     # @qvac/sdk hardware diagnostics & local text analyzer
+│   ├── zkml_prover.js        # Subprocess bridge & receipt parser for Jolt Atlas
+│   └── server.js             # Native Node.js HTTP server & REST API
+└── tests/
+    └── test_all.js           # 21-assertion end-to-end verification suite
 ```
 
 ---
 
-## 5. Quickstart & Demonstration
+## Quickstart
 
 ### Prerequisites
-- Node.js (v18+)
-- Linux / macOS (x86_64 or arm64)
+- **Node.js** v18+
+- **Linux** or **macOS** (`x86_64` / `arm64`)
+- **Rust toolchain** (only required if compiling `bin/jolt-atlas-prover` from source)
 
-### 1. Run Automated Tests
+### Setup
 ```bash
-npm test
-# Outputs: 21/21 PASSED (LEVEL 1 IDEAL)
+git clone https://github.com/Kim8584/ookweli.ai.git
+cd ookweli.ai
+npm install
+
+# Compile the release Jolt Atlas prover binary (if not already present in bin/)
+./scripts/build_prover.sh
 ```
 
-### 2. Run via CLI
+### Run the Test Suite
 ```bash
-# Run financial solvency attestation
+npm test
+```
+Runs 21 checks across QVAC Bare worker initialization, local document fingerprinting, Jolt Atlas proof generation/verification, and error boundaries.
+
+### Run the CLI
+```bash
+# Run a preset scenario (solvency | healthcare | identity)
 node bin/proofpocket.js --scenario solvency
 
-# Run with custom private text
-node bin/proofpocket.js --input "Confidential audited collateral ratio: 105%"
+# Run with custom local text
+node bin/proofpocket.js --input "Audited collateral ratio: 105%"
 
-# Run only the zkML proof and verification
+# Run only the Jolt Atlas zkML prover + verifier
 node bin/proofpocket.js --prove-only
 
-# Pure JSON output for programmatic integration
+# Emit machine-readable JSON
 node bin/proofpocket.js --json
 ```
 
-### 3. Launch Developer Web Dashboard
+### Launch the Local Web UI
 ```bash
 npm start
-# Open http://localhost:3000 in your browser
+# Open http://localhost:3000
 ```
 
 ---
 
-## 6. Offline Verification (Air-Gap Test)
+## Air-Gap / Offline Verification
 
-ProofPocket requires zero internet connectivity. To verify:
-1. Disconnect network (`sudo ip link set dev eth0 down` or disable Wi-Fi).
-2. Execute `npm test` or `node bin/proofpocket.js --scenario healthcare`.
-3. Notice: Telemetry, on-device classification, HyperKZG prover, and verifier all run entirely locally with zero dropped requests.
+Once `npm install` and `./scripts/build_prover.sh` have completed, the entire stack operates with zero network access. You can disable Wi-Fi or unplug Ethernet and run `npm test`, `npm start`, or `node bin/proofpocket.js`—all inference, telemetry, proving, and verification execute locally.
 
 ---
 
-## 7. License & Attributions
+## License & Credits
 
-- **ProofPocket:** Apache-2.0 License.
-- **Tether QVAC SDK:** Apache-2.0 License (Tether Operations Limited / Holepunch).
-- **Jolt Atlas:** Apache-2.0 / MIT License (ICME Labs & a16z Crypto).
-- Built for the **AI Yako Hackathon (Nairobi)**.
+- **Ookweli / ProofPocket:** Apache-2.0
+- **Tether QVAC SDK (`@qvac/sdk`):** Apache-2.0
+- **Jolt Atlas (`ICME-Lab/jolt-atlas`):** Apache-2.0 / MIT (built on a16z Crypto's Jolt)
+- **BGE-Tiny ONNX fixture:** MIT
