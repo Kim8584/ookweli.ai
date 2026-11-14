@@ -21,6 +21,7 @@ Options:
   --input <text>        Custom input statement for on-device analysis
   --qvac-only           Run only Tether QVAC hardware telemetry and local analysis
   --prove-only          Run only the Jolt Atlas zkML proof generation & verification
+  --version, -v         Display current version
   --json                Output pure JSON result
   --help, -h            Show this help manual
 
@@ -32,6 +33,11 @@ Examples:
 }
 
 async function main() {
+  if (argv.includes('--version') || argv.includes('-v')) {
+    console.log('proofpocket v1.0.0');
+    process.exit(0);
+  }
+
   if (argv.includes('--help') || argv.includes('-h')) {
     printHelp();
     process.exit(0);
