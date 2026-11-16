@@ -24,6 +24,12 @@ export const PRESET_SCENARIOS = {
     title: 'Zero-Knowledge AML & Sanctions Clearance',
     subtitle: 'Verify non-sanctioned identity clearance without disclosing biometric or passport PII',
     defaultText: 'Subject verification: jurisdiction Republic of Kenya. PEP clearance: Negative. OFAC/UN Sanctions screening: Negative. Biometric confidence score: 0.994.'
+  },
+  targeted_ai: {
+    id: 'targeted_ai',
+    title: 'Private Targeted AI & Audience Attribution',
+    subtitle: 'Compute audience intent and personalization segments on-device without tracker leakage',
+    defaultText: 'Cohort evaluation: B2B Fintech SaaS buyers with active treasury management intent. Target score: 0.932. Retention risk: Low. Privacy constraint: Zero third-party ad-network tracking.'
   }
 };
 

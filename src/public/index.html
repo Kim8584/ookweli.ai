@@ -248,6 +248,7 @@
             <button class="scenario-btn active" onclick="selectScenario('solvency')">USDT Reserve Audit</button>
             <button class="scenario-btn" onclick="selectScenario('healthcare')">Clinical EHR Triage</button>
             <button class="scenario-btn" onclick="selectScenario('identity')">AML / Sanctions</button>
+            <button class="scenario-btn" onclick="selectScenario('targeted_ai')">Targeted AI</button>
           </div>
 
           <textarea id="documentInput" placeholder="Enter private statement or select a scenario..."></textarea>
@@ -371,7 +372,8 @@
     const scenarios = {
       solvency: "Audited Liquid Reserves: 114,200,000 USD Equivalent. Collateral Ratio: 104.8%. Zero unsecured commercial paper held. Treasury Bills: 88.5%. Sovereign Repo: 11.5%.",
       healthcare: "Patient presents with acute episodic dyspnea and tachycardia. Fasting blood glucose: 118 mg/dL. ECG indicates normal sinus rhythm with mild non-specific ST changes.",
-      identity: "Subject verification: jurisdiction Republic of Kenya. PEP clearance: Negative. OFAC/UN Sanctions screening: Negative. Biometric confidence score: 0.994."
+      identity: "Subject verification: jurisdiction Republic of Kenya. PEP clearance: Negative. OFAC/UN Sanctions screening: Negative. Biometric confidence score: 0.994.",
+      targeted_ai: "Cohort evaluation: B2B Fintech SaaS buyers with active treasury management intent. Target score: 0.932. Retention risk: Low. Privacy constraint: Zero third-party ad-network tracking."
     };
 
     function selectScenario(id) {

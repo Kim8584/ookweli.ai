@@ -109,6 +109,10 @@ export function analyzeDocumentLocally(text, scenario = 'custom') {
     domain = 'Identity Credential & AML Compliance';
     sensitivityLevel = 'High (PII Protection)';
     policyFlags.push('ID-2: Unlinkable zkML identity check');
+  } else if (/target|audience|demographic|churn|segment|lead|campaign|conversion|intent/i.test(lower)) {
+    domain = 'Targeted AI & Audience Intent Scoring';
+    sensitivityLevel = 'High (Behavioral & Consumer Privacy)';
+    policyFlags.push('TAI-7: Client-side targeted inference without behavioral profiling leakage');
   }
 
   return {

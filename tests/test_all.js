@@ -47,6 +47,10 @@ async function runTestSuite() {
   assert(docAnalysis.fingerprint.startsWith('0x'), `Deterministic fingerprint generated (${docAnalysis.fingerprint})`);
   assert(docAnalysis.domain.includes('Financial Solvency'), `Domain accurately classified (${docAnalysis.domain})`);
 
+  const targetedDoc = 'High-intent B2B audience demographic with 0.95 conversion intent and low churn risk';
+  const targetedAnalysis = analyzeDocumentLocally(targetedDoc, 'targeted_ai');
+  assert(targetedAnalysis.domain.includes('Targeted AI'), `Targeted AI audience domain identified (${targetedAnalysis.domain})`);
+
   // Test Suite 3: Jolt Atlas zkML Prover & Verifier (Level 1 Verification)
   console.log('\n[SUITE 3] Testing Jolt Atlas zkML Prover & Cryptographic Verifier (Level 1)...');
   const zkResult = await runZkmlProof({ withStats: true });

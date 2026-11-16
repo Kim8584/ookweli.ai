@@ -17,7 +17,7 @@ Usage:
   proofpocket [options]
 
 Options:
-  --scenario <name>     Select preset: 'solvency', 'healthcare', 'identity' (default: solvency)
+  --scenario <name>     Select preset: 'solvency', 'healthcare', 'identity', 'targeted_ai' (default: solvency)
   --input <text>        Custom input statement for on-device analysis
   --qvac-only           Run only Tether QVAC hardware telemetry and local analysis
   --prove-only          Run only the Jolt Atlas zkML proof generation & verification
