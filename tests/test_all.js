@@ -7,6 +7,7 @@
 import { getQvacDiagnostics, analyzeDocumentLocally } from '../src/qvac_telemetry.js';
 import { runZkmlProof } from '../src/zkml_prover.js';
 import { processProofPocketPipeline } from '../src/proofpocket.js';
+import { WdkPaymentBridge } from '../src/wdk_bridge.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -78,6 +79,22 @@ async function runTestSuite() {
   } catch (err) {
     assert(err.message.includes('not found'), `Handled missing model gracefully: ${err.message}`);
   }
+
+  // Test Suite 6: Tether WDK Payment Escrow Settlement
+  console.log('\n[SUITE 6] Testing Tether WDK Payment Escrow Bridge...');
+  const bridge = new WdkPaymentBridge({ vaultBalance: 10000 });
+  const escrow = bridge.createAttestationEscrow({
+    recipient: '0x99A...testVault',
+    amount: 2500,
+    requiredModelHash: 'bge-tiny:atlas269',
+    conditionDescription: 'Solvency check > 100%'
+  });
+  assert(escrow.escrowId.startsWith('wdk_escrow_'), `WDK Escrow created (${escrow.escrowId})`);
+
+  const payout = bridge.verifyAndExecutePayout(escrow, pipelineResult);
+  assert(payout.settled === true, `WDK Payout successfully unlocked by verified zkML attestation (${payout.amount} USDt)`);
+  assert(payout.txHash.startsWith('0x'), `WDK settlement transaction hash generated (${payout.txHash})`);
+  assert(bridge.vaultBalance === 7500, `Vault balance reduced correctly (Remaining: ${bridge.vaultBalance} USDt)`);
 
   // Summary
   console.log('\n===============================================================');

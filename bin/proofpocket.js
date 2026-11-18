@@ -7,6 +7,7 @@
 import { processProofPocketPipeline, PRESET_SCENARIOS } from '../src/proofpocket.js';
 import { getQvacDiagnostics } from '../src/qvac_telemetry.js';
 import { runZkmlProof } from '../src/zkml_prover.js';
+import { WdkPaymentBridge } from '../src/wdk_bridge.js';
 
 const argv = process.argv.slice(2);
 
@@ -19,6 +20,7 @@ Usage:
 Options:
   --scenario <name>     Select preset: 'solvency', 'healthcare', 'identity', 'targeted_ai' (default: solvency)
   --input <text>        Custom input statement for on-device analysis
+  --wdk-settle          Simulate Tether WDK payment release conditioned on verified proof
   --qvac-only           Run only Tether QVAC hardware telemetry and local analysis
   --prove-only          Run only the Jolt Atlas zkML proof generation & verification
   --version, -v         Display current version
@@ -46,6 +48,7 @@ async function main() {
   const isJson = argv.includes('--json');
   const qvacOnly = argv.includes('--qvac-only');
   const proveOnly = argv.includes('--prove-only');
+  const wdkSettle = argv.includes('--wdk-settle');
 
   const scenarioIdx = argv.indexOf('--scenario');
   const scenarioId = scenarioIdx !== -1 && argv[scenarioIdx + 1] ? argv[scenarioIdx + 1] : 'solvency';
@@ -131,6 +134,28 @@ async function main() {
   console.log('\n3. CRYPTOGRAPHIC BOUNDARY STATEMENT:');
   console.log('   • Proves: Deterministic execution of 269 ONNX graph nodes without mathematical forgery.');
   console.log('   • Does not prove: Factual truth of external real-world statements.');
+
+  if (wdkSettle) {
+    console.log('\n4. TETHER WDK NON-CUSTODIAL ESCROW SETTLEMENT:');
+    const bridge = new WdkPaymentBridge({ vaultBalance: 50000.0 });
+    const escrow = bridge.createAttestationEscrow({
+      recipient: '0x71C...4f98 (Tether WDK Smart Vault)',
+      amount: 1500.0,
+      requiredModelHash: 'bge-tiny:atlas269',
+      conditionDescription: 'Private AI reserve solvency threshold >= 100%'
+    });
+    console.log(`   Escrow Created: ${escrow.escrowId} for ${escrow.amount} ${escrow.asset}`);
+    console.log(`   Verifying proof on Tether WDK settlement bridge...`);
+    const payout = bridge.verifyAndExecutePayout(escrow, result);
+    if (payout.settled) {
+      console.log(`   ✓ Payout Approved: ${payout.amount} ${payout.asset} released!`);
+      console.log(`   WDK Transaction Hash: ${payout.txHash}`);
+      console.log(`   Audit Status: ${payout.privacyAudit}`);
+    } else {
+      console.log(`   ✗ Payout Rejected: ${payout.reason}`);
+    }
+  }
+
   console.log('===============================================================\n');
 }
 

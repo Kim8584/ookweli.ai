@@ -101,12 +101,15 @@ npm install
 ```bash
 npm test
 ```
-Runs 22 checks across QVAC Bare worker initialization, local document fingerprinting, targeted AI audience scoring, Jolt Atlas proof generation/verification, and error boundaries.
+Runs 26 checks across QVAC Bare worker initialization, local document fingerprinting, targeted AI audience scoring, Jolt Atlas proof generation/verification, error boundaries, and Tether WDK non-custodial payment escrow settlement.
 
 ### Run the CLI
 ```bash
 # Run a preset scenario (solvency | healthcare | identity | targeted_ai)
 node bin/proofpocket.js --scenario targeted_ai
+
+# Run financial solvency check with Tether WDK payment settlement
+node bin/proofpocket.js --scenario solvency --wdk-settle
 
 # Run with custom local text
 node bin/proofpocket.js --input "Audited collateral ratio: 105%"
