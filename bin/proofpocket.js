@@ -8,6 +8,7 @@ import { processProofPocketPipeline, PRESET_SCENARIOS } from '../src/proofpocket
 import { getQvacDiagnostics } from '../src/qvac_telemetry.js';
 import { runZkmlProof } from '../src/zkml_prover.js';
 import { WdkPaymentBridge } from '../src/wdk_bridge.js';
+import { WalletAiGuardian } from '../src/wallet_guardian.js';
 
 const argv = process.argv.slice(2);
 
@@ -20,6 +21,7 @@ Usage:
 Options:
   --scenario <name>     Select preset: 'solvency', 'healthcare', 'identity', 'targeted_ai' (default: solvency)
   --input <text>        Custom input statement for on-device analysis
+  --wallet-audit        Run AI transaction security check (drainer, poisoning & allowance audit)
   --wdk-settle          Simulate Tether WDK payment release conditioned on verified proof
   --qvac-only           Run only Tether QVAC hardware telemetry and local analysis
   --prove-only          Run only the Jolt Atlas zkML proof generation & verification
@@ -49,6 +51,7 @@ async function main() {
   const qvacOnly = argv.includes('--qvac-only');
   const proveOnly = argv.includes('--prove-only');
   const wdkSettle = argv.includes('--wdk-settle');
+  const walletAudit = argv.includes('--wallet-audit');
 
   const scenarioIdx = argv.indexOf('--scenario');
   const scenarioId = scenarioIdx !== -1 && argv[scenarioIdx + 1] ? argv[scenarioIdx + 1] : 'solvency';
@@ -66,6 +69,38 @@ async function main() {
       console.log(`RAM: ${diag.sample.memoryUsedFormatted} / ${diag.capabilities.memory.totalFormatted}`);
       console.log(`GPU: ${diag.capabilities.gpu.detected ? 'Active' : 'Not detected'}`);
       console.log(`Isolation: 100% On-device / Zero Remote Network Calls\n`);
+    }
+    return;
+  }
+
+  if (walletAudit) {
+    const guardian = new WalletAiGuardian({ maxDailyLimitUSDt: 2500.0 });
+    const sampleTx = {
+      to: '0x3f5ce5fbfe3e9af3971dd833d26ba9b5c936f0be',
+      amountUSDt: 3500.0,
+      isContract: true,
+      calldata: '0xa9059cbb000000000000000000000000setApprovalForAll',
+      recipientLabel: 'Unverified DEX Swap Router'
+    };
+    const auditResult = guardian.evaluateTransaction(sampleTx);
+    if (isJson) {
+      console.log(JSON.stringify(auditResult, null, 2));
+    } else {
+      console.log('\n===============================================================');
+      console.log(' OOKWELI // TETHER WDK ON-DEVICE WALLET AI GUARDIAN');
+      console.log('===============================================================');
+      console.log(`Target Address: ${auditResult.targetAddress}`);
+      console.log(`Amount: ${auditResult.amountUSDt} USDt`);
+      console.log(`Risk Score: ${auditResult.riskScore} / 1.000`);
+      console.log(`Decision: ${auditResult.decision === 'BLOCK' ? '⛔ ' + auditResult.decision : '⚠️ ' + auditResult.decision}`);
+      console.log(`Recommendation: ${auditResult.humanExplanation}`);
+      console.log('Detected Threats:');
+      for (const flag of auditResult.riskFlags) {
+        console.log(`  • ${flag}`);
+      }
+      console.log(`Local Audit Hash: ${auditResult.auditHash}`);
+      console.log('Air-gapped: 100% evaluated on-device before private key signature');
+      console.log('===============================================================\n');
     }
     return;
   }

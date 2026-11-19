@@ -6,3 +6,4 @@ export { processProofPocketPipeline, PRESET_SCENARIOS } from './proofpocket.js';
 export { getQvacDiagnostics, analyzeDocumentLocally } from './qvac_telemetry.js';
 export { runZkmlProof } from './zkml_prover.js';
 export { WdkPaymentBridge } from './wdk_bridge.js';
+export { WalletAiGuardian } from './wallet_guardian.js';

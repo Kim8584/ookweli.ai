@@ -8,6 +8,7 @@ import { getQvacDiagnostics, analyzeDocumentLocally } from '../src/qvac_telemetr
 import { runZkmlProof } from '../src/zkml_prover.js';
 import { processProofPocketPipeline } from '../src/proofpocket.js';
 import { WdkPaymentBridge } from '../src/wdk_bridge.js';
+import { WalletAiGuardian } from '../src/wallet_guardian.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -95,6 +96,26 @@ async function runTestSuite() {
   assert(payout.settled === true, `WDK Payout successfully unlocked by verified zkML attestation (${payout.amount} USDt)`);
   assert(payout.txHash.startsWith('0x'), `WDK settlement transaction hash generated (${payout.txHash})`);
   assert(bridge.vaultBalance === 7500, `Vault balance reduced correctly (Remaining: ${bridge.vaultBalance} USDt)`);
+
+  // Test Suite 7: On-Device Wallet AI Guardian
+  console.log('\n[SUITE 7] Testing On-Device Wallet AI Guardian Security Engine...');
+  const guardian = new WalletAiGuardian({ maxDailyLimitUSDt: 1000 });
+  const safeTx = guardian.evaluateTransaction({
+    to: '0x1234567890123456789012345678901234567890',
+    amountUSDt: 250,
+    isContract: false
+  });
+  assert(safeTx.decision === 'APPROVE', `Normal transaction safely approved (Risk score: ${safeTx.riskScore})`);
+
+  const drainerTx = guardian.evaluateTransaction({
+    to: '0x3f5ce5fbfe3e9af3971dd833d26ba9b5c936f0be',
+    amountUSDt: 5000,
+    isContract: true,
+    calldata: '0xsetApprovalForAll'
+  });
+  assert(drainerTx.decision === 'BLOCK', `Wallet drainer blocked successfully (Risk score: ${drainerTx.riskScore})`);
+  assert(drainerTx.riskFlags.length >= 2, `Multiple risk indicators triggered (${drainerTx.riskFlags.length} flags)`);
+  assert(drainerTx.evaluatedLocally === true, 'Wallet AI security evaluation ran 100% locally on-device');
 
   // Summary
   console.log('\n===============================================================');
